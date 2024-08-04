@@ -1,26 +1,45 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="app">
+    <nav class="bg-gray-800 p-4">
+      <div class="container mx-auto flex justify-between items-center">
+        <router-link to="/" class="text-white font-bold text-xl">Age Fit App</router-link>
+        <div>
+          <router-link to="/login" class="text-white mr-4" v-if="!isAuthenticated">Login</router-link>
+          <router-link to="/register" class="text-white mr-4" v-if="!isAuthenticated">Register</router-link>
+          <router-link to="/dashboard" class="text-white mr-4" v-if="isAuthenticated">Dashboard</router-link>
+          <button @click="logout" class="text-white" v-if="isAuthenticated">Logout</button>
+        </div>
+      </div>
+    </nav>
+    <router-view></router-view>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
 export default {
   name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+  data() {
+    return {
+      isAuthenticated: false,
+    };
+  },
+  created() {
+    this.checkAuthentication();
+  },
+  methods: {
+    checkAuthentication() {
+      this.isAuthenticated = !!localStorage.getItem('token');
+    },
+    logout() {
+      localStorage.removeItem('token');
+      this.isAuthenticated = false;
+      this.$router.push('/login');
+    },
+  },
+  watch: {
+    $route() {
+      this.checkAuthentication();
+    },
+  },
+};
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
