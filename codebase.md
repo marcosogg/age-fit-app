@@ -269,9 +269,78 @@ pnpm-debug.log*
 
 ```py
 from django.shortcuts import render
+from django.http import HttpResponse
+from rest_framework import viewsets
+from .models import CustomUser, Exercise, Program, WorkoutDay, ProgramExercise, Workout, WorkoutExercise, BodyWeightLog
+from .serializers import CustomUserSerializer, ExerciseSerializer, ProgramSerializer, WorkoutDaySerializer, ProgramExerciseSerializer, WorkoutSerializer, WorkoutExerciseSerializer, BodyWeightLogSerializer
 
-# Create your views here.
+def home(request):
+    return HttpResponse("<h1>Welcome to Age Fit App</h1>")
 
+class CustomUserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+
+class ExerciseViewSet(viewsets.ModelViewSet):
+    queryset = Exercise.objects.all()
+    serializer_class = ExerciseSerializer
+
+class ProgramViewSet(viewsets.ModelViewSet):
+    queryset = Program.objects.all()
+    serializer_class = ProgramSerializer
+
+class WorkoutDayViewSet(viewsets.ModelViewSet):
+    queryset = WorkoutDay.objects.all()
+    serializer_class = WorkoutDaySerializer
+
+class ProgramExerciseViewSet(viewsets.ModelViewSet):
+    queryset = ProgramExercise.objects.all()
+    serializer_class = ProgramExerciseSerializer
+
+class WorkoutViewSet(viewsets.ModelViewSet):
+    queryset = Workout.objects.all()
+    serializer_class = WorkoutSerializer
+
+class WorkoutExerciseViewSet(viewsets.ModelViewSet):
+    queryset = WorkoutExercise.objects.all()
+    serializer_class = WorkoutExerciseSerializer
+
+class BodyWeightLogViewSet(viewsets.ModelViewSet):
+    queryset = BodyWeightLog.objects.all()
+    serializer_class = BodyWeightLogSerializer
+```
+
+# core\urls.py
+
+```py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import (
+    home,  # Add this import
+    CustomUserViewSet,
+    ExerciseViewSet,
+    ProgramViewSet,
+    WorkoutDayViewSet,
+    ProgramExerciseViewSet,
+    WorkoutViewSet,
+    WorkoutExerciseViewSet,
+    BodyWeightLogViewSet
+)
+
+router = DefaultRouter()
+router.register(r'users', CustomUserViewSet)
+router.register(r'exercises', ExerciseViewSet)
+router.register(r'programs', ProgramViewSet)
+router.register(r'workout-days', WorkoutDayViewSet)
+router.register(r'program-exercises', ProgramExerciseViewSet)
+router.register(r'workouts', WorkoutViewSet)
+router.register(r'workout-exercises', WorkoutExerciseViewSet)
+router.register(r'body-weight-logs', BodyWeightLogViewSet)
+
+urlpatterns = [
+    path('', home, name='home'),
+    path('api/', include(router.urls)),
+]
 ```
 
 # core\tests.py
@@ -280,6 +349,55 @@ from django.shortcuts import render
 from django.test import TestCase
 
 # Create your tests here.
+
+```
+
+# core\serializers.py
+
+```py
+from rest_framework import serializers
+from .models import CustomUser, Exercise, Program, WorkoutDay, ProgramExercise, Workout, WorkoutExercise, BodyWeightLog
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'email', 'date_of_birth', 'height', 'fitness_level')
+        extra_kwargs = {'password': {'write_only': True}}
+
+class ExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Exercise
+        fields = '__all__'
+
+class ProgramSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Program
+        fields = '__all__'
+
+class WorkoutDaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutDay
+        fields = '__all__'
+
+class ProgramExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgramExercise
+        fields = '__all__'
+
+class WorkoutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Workout
+        fields = '__all__'
+
+class WorkoutExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutExercise
+        fields = '__all__'
+
+class BodyWeightLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BodyWeightLog
+        fields = '__all__'
 
 ```
 
@@ -387,39 +505,22 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/wsgi/
 """
 
 import os
-
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'age_fit_project.settings')
 
 application = get_wsgi_application()
-
 ```
 
 # age_fit_project\urls.py
 
 ```py
-"""
-URL configuration for age_fit_project project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('core.urls')),
 ]
 
 ```
@@ -439,6 +540,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
+    'core',  # Move this to the top
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -447,7 +549,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'app',  # Your main app
 ]
 
 MIDDLEWARE = [
@@ -461,7 +562,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'backend.urls'
+ROOT_URLCONF = 'age_fit_project.urls'
 
 TEMPLATES = [
     {
@@ -479,7 +580,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = 'age_fit_project.wsgi.application'
 
 DATABASES = {
     'default': {
@@ -527,7 +628,8 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTH_USER_MODEL = 'app.CustomUser'
+AUTH_USER_MODEL = 'core.CustomUser'
+   
 
 ```
 
@@ -626,6 +728,136 @@ This is a binary file of the type: Binary
 # core\migrations\__init__.py
 
 ```py
+
+```
+
+# core\migrations\0001_initial.py
+
+```py
+# Generated by Django 4.2.3 on 2024-08-04 20:22
+
+from django.conf import settings
+import django.contrib.auth.models
+import django.contrib.auth.validators
+from django.db import migrations, models
+import django.db.models.deletion
+import django.utils.timezone
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+        ('auth', '0012_alter_user_first_name_max_length'),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='CustomUser',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('password', models.CharField(max_length=128, verbose_name='password')),
+                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
+                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
+                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.', max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator()], verbose_name='username')),
+                ('first_name', models.CharField(blank=True, max_length=150, verbose_name='first name')),
+                ('last_name', models.CharField(blank=True, max_length=150, verbose_name='last name')),
+                ('email', models.EmailField(blank=True, max_length=254, verbose_name='email address')),
+                ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
+                ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
+                ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
+                ('date_of_birth', models.DateField(blank=True, null=True)),
+                ('height', models.FloatField(blank=True, null=True)),
+                ('fitness_level', models.CharField(choices=[('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')], default='beginner', max_length=20)),
+                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
+                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
+            ],
+            options={
+                'verbose_name': 'user',
+                'verbose_name_plural': 'users',
+                'abstract': False,
+            },
+            managers=[
+                ('objects', django.contrib.auth.models.UserManager()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Exercise',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=100)),
+                ('description', models.TextField()),
+                ('video_url', models.URLField(blank=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Program',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=100)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='Workout',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('date', models.DateField()),
+                ('is_completed', models.BooleanField(default=False)),
+                ('is_partial', models.BooleanField(default=False)),
+                ('comments', models.TextField(blank=True)),
+                ('program', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.program')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='WorkoutExercise',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('planned_sets', models.IntegerField()),
+                ('planned_reps', models.IntegerField()),
+                ('planned_weight', models.FloatField()),
+                ('actual_sets', models.IntegerField(blank=True, null=True)),
+                ('actual_reps', models.IntegerField(blank=True, null=True)),
+                ('actual_weight', models.FloatField(blank=True, null=True)),
+                ('is_skipped', models.BooleanField(default=False)),
+                ('notes', models.TextField(blank=True)),
+                ('exercise', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.exercise')),
+                ('workout', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.workout')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='WorkoutDay',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('day_number', models.IntegerField()),
+                ('program', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.program')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='ProgramExercise',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('sets', models.IntegerField()),
+                ('reps', models.IntegerField()),
+                ('target_weight', models.FloatField()),
+                ('exercise', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.exercise')),
+                ('workout_day', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.workoutday')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='BodyWeightLog',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('date', models.DateField()),
+                ('weight', models.FloatField()),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+    ]
 
 ```
 
